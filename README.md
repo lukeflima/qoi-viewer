@@ -1,4 +1,4 @@
-# QOIF Image Decoder in WASM
+# QOIF Image Decoder on WASM
 
 A Quite OK Image Format decoder for WASM in Rust.
 
