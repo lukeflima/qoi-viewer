@@ -1,6 +1,10 @@
 mod utils;
 
+use core::panic;
+
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::Clamped;
+use web_sys::ImageData;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -159,17 +163,18 @@ pub fn decode_qoi(bytes: &[u8], size: usize) -> QoiImage {
         panic!("Not a valid QOI image")
     }
 
-    let px_len: usize = (header.width * header.height * header.channels as u32) as usize;
+    // Can only construct ImageData from RGBA
+    let px_len: usize = (header.width * header.height * 4) as usize;
     let mut pixels: Vec<u8> = vec![0; px_len];
 
     let mut prev_color = QoiColor {
         a: 255,
         ..Default::default()
     };
-    let mut seen_colors: [QoiColor; 64] = [Default::default(); 64];
+    let mut seen_colors: [QoiColor; 64] = [QoiColor::from(0x000000FF); 64];
     let mut run: usize = 0;
     let chunks_len: usize = size - QOI_END_SEGMENT_SIZE as usize;
-    for px_pos in (0..px_len).step_by(header.channels as usize) {
+    for px_pos in (0..px_len).step_by(4) {
         if run > 0 {
             run -= 1;
         } else if index < chunks_len {
@@ -214,13 +219,12 @@ pub fn decode_qoi(bytes: &[u8], size: usize) -> QoiImage {
         pixels[px_pos] = prev_color.r;
         pixels[px_pos + 1] = prev_color.g;
         pixels[px_pos + 2] = prev_color.b;
-        if header.channels == 4 {
-            pixels[px_pos + 3] = prev_color.a;
+        pixels[px_pos + 3] = if header.channels == 4 {
+            prev_color.a
+        } else {
+            255
         }
     }
 
-    QoiImage {
-        header,
-        bytes: pixels,
-    }
+    ImageData::new_with_u8_clamped_array_and_sh(Clamped(&pixels), header.width, header.height)
 }
