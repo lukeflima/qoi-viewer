@@ -1,8 +1,8 @@
 [package]
 name = "qoi-viewer"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Lucas Lima <lucasflima25@gmail.com>"]
-edition = "2018"
+edition = "2022"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
