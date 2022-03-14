@@ -140,7 +140,7 @@ impl QoiImage {
 }
 
 #[wasm_bindgen]
-pub fn decode_qoi(bytes: &[u8], size: usize) -> QoiImage {
+pub fn decode_qoi(bytes: &[u8], size: usize) -> Result<ImageData, JsValue> {
     utils::set_panic_hook();
 
     let mut index = 0_usize;

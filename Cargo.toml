@@ -2,7 +2,7 @@
 name = "qoi-viewer"
 version = "0.2.0"
 authors = ["Lucas Lima <lucasflima25@gmail.com>"]
-edition = "2022"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
