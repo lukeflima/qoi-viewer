@@ -147,10 +147,10 @@ impl QoiImage {
 }
 
 #[wasm_bindgen]
-pub fn decode_qoi(bytes: &[u8], size: usize) -> Result<ImageData, JsValue> {
+pub fn decode_qoi(bytes: &[u8]) -> Result<ImageData, JsValue> {
     utils::set_panic_hook();
-
-    if bytes.len() < QOI_HEADER_SIZE {
+    let size = bytes.len();
+    if size < QOI_HEADER_SIZE {
         panic!("File too small to be a valid QOI image");
     }
 
