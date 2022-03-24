@@ -1,6 +1,6 @@
 [package]
 name = "qoi-viewer"
-version = "0.2.0"
+version = "0.4.0"
 authors = ["Lucas Lima <lucasflima25@gmail.com>"]
 edition = "2021"
 
