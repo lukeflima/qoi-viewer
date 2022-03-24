@@ -65,10 +65,10 @@ const QOI_PIXELS_MAX: u32 = 400000000;
 const QOI_END_SEGMENT_SIZE: u32 = 8;
 
 enum QoiOp {
-    Index,
-    Diff,
-    Luma,
-    Run,
+    Index(usize),
+    Diff(QoiColor),
+    Luma(u8),
+    Run(usize),
     Rgb,
     Rgba,
     Unknown,
@@ -81,13 +81,18 @@ impl From<u8> for QoiOp {
         } else if b == 0xff {
             QoiOp::Rgba
         } else if (b & 0xc0) == 0x00 {
-            QoiOp::Index
+            QoiOp::Index(b as usize)
         } else if (b & 0xc0) == 0x40 {
-            QoiOp::Diff
+            QoiOp::Diff(QoiColor {
+                r: ((b >> 4) & 0x03) - 2,
+                g: ((b >> 2) & 0x03) - 2,
+                b: (b & 0x03) - 2,
+                a: 0,
+            })
         } else if (b & 0xc0) == 0x80 {
-            QoiOp::Luma
+            QoiOp::Luma((b & 0x3f) - 32)
         } else if (b & 0xc0) == 0xc0 {
-            QoiOp::Run
+            QoiOp::Run((b & 0x3f) as usize)
         } else {
             QoiOp::Unknown
         }
@@ -192,25 +197,26 @@ pub fn decode_qoi(bytes: &[u8], size: usize) -> Result<ImageData, JsValue> {
                     prev_color.b = read_8(bytes, &mut index);
                     prev_color.a = read_8(bytes, &mut index);
                 }
-                QoiOp::Index => {
-                    prev_color = seen_colors[b1 as usize];
+                QoiOp::Index(index) => {
+                    prev_color = seen_colors[index];
                 }
-                QoiOp::Diff => {
-                    prev_color.r += ((b1 >> 4) & 0x03) - 2;
-                    prev_color.g += ((b1 >> 2) & 0x03) - 2;
-                    prev_color.b += (b1 & 0x03) - 2;
+                QoiOp::Diff(c) => {
+                    prev_color.r += c.r;
+                    prev_color.g += c.g;
+                    prev_color.b += c.b
                 }
-                QoiOp::Luma => {
+                QoiOp::Luma(vg) => {
                     let b2 = read_8(bytes, &mut index);
-                    let vg = (b1 & 0x3f) - 32;
                     prev_color.r += vg - 8 + ((b2 >> 4) & 0x0f);
                     prev_color.g += vg;
                     prev_color.b += vg - 8 + (b2 & 0x0f);
                 }
-                QoiOp::Run => {
-                    run = (b1 & 0x3f) as usize;
+                QoiOp::Run(runs) => {
+                    run = runs;
                 }
-                QoiOp::Unknown => {}
+                QoiOp::Unknown => {
+                    unreachable!("Not a valid QoiOp.")
+                }
             }
 
             seen_colors[prev_color.hash() % 64] = prev_color;
