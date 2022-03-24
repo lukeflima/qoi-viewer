@@ -18,6 +18,8 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
+
+#[allow(unused_macros)]
 macro_rules! console_log {
     // Note that this is using the `log` function imported above during
     // `bare_bones`
@@ -61,8 +63,8 @@ impl From<u32> for QoiColor {
 const QOI_MAGIC: u32 =
     (('q' as u32) << 24) | (('o' as u32) << 16) | (('i' as u32) << 8) | 'f' as u32;
 const QOI_PIXELS_MAX: u32 = 400000000;
-// const QOI_HEADER_SIZE: u32 = 14;
-const QOI_END_SEGMENT_SIZE: u32 = 8;
+const QOI_HEADER_SIZE: usize = 14;
+const QOI_END_SEGMENT_SIZE: usize = 8;
 
 enum QoiOp {
     Index(usize),
@@ -148,6 +150,10 @@ impl QoiImage {
 pub fn decode_qoi(bytes: &[u8], size: usize) -> Result<ImageData, JsValue> {
     utils::set_panic_hook();
 
+    if bytes.len() < QOI_HEADER_SIZE {
+        panic!("File too small to be a valid QOI image");
+    }
+
     let mut index = 0_usize;
     let header = QoiHeader {
         magic: read_32(bytes, &mut index),
@@ -165,20 +171,17 @@ pub fn decode_qoi(bytes: &[u8], size: usize) -> Result<ImageData, JsValue> {
         || header.magic != QOI_MAGIC
         || header.height >= QOI_PIXELS_MAX / header.width
     {
-        panic!("Not a valid QOI image")
+        panic!("Not a valid QOI image");
     }
 
     // Can only construct ImageData from RGBA
     let px_len: usize = (header.width * header.height * 4) as usize;
     let mut pixels: Vec<u8> = vec![0; px_len];
 
-    let mut prev_color = QoiColor {
-        a: 255,
-        ..Default::default()
-    };
+    let mut prev_color = QoiColor::from(0x000000FF);
     let mut seen_colors: [QoiColor; 64] = [QoiColor::from(0x000000FF); 64];
     let mut run: usize = 0;
-    let chunks_len: usize = size - QOI_END_SEGMENT_SIZE as usize;
+    let chunks_len: usize = size - QOI_END_SEGMENT_SIZE;
     for px_pos in (0..px_len).step_by(4) {
         if run > 0 {
             run -= 1;
