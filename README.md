@@ -2,7 +2,7 @@
 
 A Quite OK Image Format decoder for WASM in Rust.
 
-[Demo](https://lukeflima.dev.br/#projects)
+[Demo](https://lukeflima.dev.br/blog/qoi-viewer)
 
 ## Build
 
